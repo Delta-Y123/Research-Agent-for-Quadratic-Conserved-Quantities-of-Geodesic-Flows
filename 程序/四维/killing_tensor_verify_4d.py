@@ -134,6 +134,10 @@ def test_schwarzschild():
     verify_killing_tensor(g, K_cov, coords, momenta,
                           label=r"Schwarzschild: $K=d/dt\otimes d/dt+d/d\phi\otimes d/d\phi$ ($Q=p_t^2+p_\phi^2$)")
 
+    K_L2_cov = Matrix.diag(0, 0, r ** 4, r ** 4 * sin(th) ** 2)
+    verify_killing_tensor(g, K_L2_cov, coords, momenta,
+                          label=r"Schwarzschild: $L^2=p_\theta^2+p_\phi^2/\sin^2\theta$")
+
 
 def test_kerr():
     print("\n" + "#" * 72)
