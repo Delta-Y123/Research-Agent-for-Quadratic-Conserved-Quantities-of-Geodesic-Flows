@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>测地流二次守恒量 · 研究 Agent</title>
+<link rel="stylesheet" href="/static/vendor/katex/katex.min.css">
+<script defer src="/static/vendor/katex/katex.min.js"></script>
+<style>
+:root{
+  --bg:#080b11; --bg2:#0d1219; --panel:#111825; --panel2:#151d2c;
+  --line:#1e293b; --line2:#26334a;
+  --fg:#dbe3ef; --fg2:#93a3b8; --fg3:#64748b;
+  --accent:#4ea1ff; --accent2:#7c5cff;
+  --green:#35d07f; --amber:#f0b429; --blue:#4ea1ff; --red:#ff5c7a;
+  --grey:#7a8699; --info:#6b7a90;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:"Inter","Segoe UI",system-ui,-apple-system,"Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 15% -10%, #16233a 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, #1a1430 0%, transparent 55%),
+    var(--bg);
+  color:var(--fg); font-family:var(--sans); font-size:14px; line-height:1.55;
+  overflow:hidden;
+}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#243044;border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:#31415c;background-clip:padding-box}
+::-webkit-scrollbar-track{background:transparent}
+
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh}
+
+/* ---------------- header ---------------- */
+header{padding:14px 18px 10px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(17,24,37,.92),rgba(8,11,17,.75));backdrop-filter:blur(8px)}
+.brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{width:26px;height:26px;border-radius:8px;flex:0 0 auto;
+  background:conic-gradient(from 210deg,var(--accent),var(--accent2),var(--accent));
+  box-shadow:0 0 18px rgba(78,161,255,.45)}
+h1{font-size:15px;margin:0;font-weight:650;letter-spacing:.2px}
+h1 small{color:var(--fg3);font-weight:400;margin-left:8px;font-size:12px}
+.chips{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;
+  border:1px solid var(--line2);background:#0e1521;font-size:11.5px;color:var(--fg2);white-space:nowrap}
+.chip b{color:var(--fg);font-weight:600}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--grey);box-shadow:0 0 8px currentColor}
+.dot.ok{background:var(--green);color:var(--green)}
+.dot.warn{background:var(--amber);color:var(--amber)}
+.dot.bad{background:var(--red);color:var(--red)}
+
+.controls{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:12px;align-items:end}
+textarea#question{
+  width:100%;min-height:56px;max-height:140px;resize:vertical;
+  background:#0a0f18;border:1px solid var(--line2);border-radius:10px;
+  color:var(--fg);padding:10px 12px;font-family:var(--sans);font-size:13.5px;outline:none}
+textarea#question:focus{border-color:#33507a;box-shadow:0 0 0 3px rgba(78,161,255,.12)}
+.btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button{font-family:var(--sans);font-size:13px;border-radius:9px;border:1px solid var(--line2);
+  background:#131c2a;color:var(--fg);padding:8px 14px;cursor:pointer;transition:.15s}
+button:hover{border-color:#3a4f70;background:#182334}
+button:disabled{opacity:.42;cursor:not-allowed}
+button.primary{background:linear-gradient(180deg,#2b7fe0,#1d63b8);border-color:#3d8ff0;
+  color:#fff;font-weight:600;box-shadow:0 4px 16px rgba(45,120,220,.35)}
+button.primary:hover{filter:brightness(1.1)}
+button.danger{background:#2a1420;border-color:#5c2337;color:#ff9db1}
+select,input[type=number],input[type=text]{
+  background:#0a0f18;border:1px solid var(--line2);border-radius:8px;color:var(--fg);
+  padding:6px 9px;font-size:12.5px;font-family:var(--mono);outline:none}
+select:focus,input:focus{border-color:#33507a}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:transparent;padding:7px 13px;font-size:12.5px;color:var(--fg2)}
+.seg button.on{background:#1c2b42;color:#cfe4ff;box-shadow:inset 0 0 0 1px #2f4a70}
+.hint{font-size:11.5px;color:var(--fg3)}
+
+/* ---------------- main ---------------- */
+.main{display:grid;grid-template-columns:344px minmax(0,1fr) 452px;gap:14px;
+  padding:14px;overflow:hidden;min-height:0}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;overflow-y:auto;padding-right:2px}
+.card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
+  border-radius:13px;overflow:hidden;flex:0 0 auto}
+.card>h2{margin:0;padding:10px 13px;font-size:11.5px;font-weight:650;letter-spacing:.10em;
+  text-transform:uppercase;color:var(--fg3);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:8px}
+.card>h2 .sp{margin-left:auto;font-family:var(--mono);letter-spacing:0;text-transform:none;color:var(--fg2)}
+.card .body{padding:11px 13px}
+.card.grow{flex:1 1 auto;display:flex;flex-direction:column;min-height:180px}
+.card.grow .body{flex:1 1 auto;overflow-y:auto;min-height:0}
+
+/* ---------------- timeline ---------------- */
+#timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.step{border:1px solid var(--line);border-radius:10px;background:#0c1320;
+  padding:9px 11px;position:relative;transition:.2s;animation:pop .28s ease both}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.step::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:2px;border-radius:2px;background:var(--grey)}
+.step[data-kind=existence]::before{background:var(--green)}
+.step[data-kind=nonexistence_in_span]::before{background:var(--amber)}
+.step[data-kind=classification]::before{background:var(--blue)}
+.step[data-kind=artifact]::before{background:var(--red)}
+.step[data-kind=info]::before{background:var(--info)}
+.step .top{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.step .n{font-family:var(--mono);font-size:11px;color:var(--fg3)}
+.step .tool{font-family:var(--mono);font-size:12.5px;font-weight:600;color:#cfe0ff}
+.step .sec{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--fg3)}
+.kind{font-size:10.5px;font-family:var(--mono);padding:1px 7px;border-radius:999px;
+  border:1px solid currentColor;opacity:.95}
+.kind.existence{color:var(--green)} .kind.nonexistence_in_span{color:var(--amber)}
+.kind.classification{color:var(--blue)} .kind.artifact{color:var(--red)}
+.kind.inconclusive{color:var(--grey)} .kind.info{color:var(--info)}
+.step .why{color:var(--fg2);font-size:12px;margin-top:5px}
+.step .args{font-family:var(--mono);font-size:11px;color:var(--fg3);margin-top:5px;
+  word-break:break-all;line-height:1.5}
+.stats{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.stat{background:#0a111c;border:1px solid var(--line);border-radius:7px;padding:3px 8px;
+  font-family:var(--mono);font-size:11px;color:var(--fg2)}
+.stat b{color:var(--fg);font-weight:600}
+.stat.hot{border-color:#5a4416;background:#1a1408}
+.stat.hot b{color:var(--amber)}
+.step details{margin-top:7px}
+.step summary{cursor:pointer;font-size:11.5px;color:var(--fg3);outline:none}
+.step pre{margin:6px 0 0;padding:8px;background:#070b12;border:1px solid var(--line);
+  border-radius:7px;font-family:var(--mono);font-size:10.5px;color:#9fb0c8;
+  max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.verdict{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+.vd{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:5px;border:1px solid}
+.vd.ok{color:#7ef0b0;border-color:#1f6b45;background:#0d2118}
+.vd.no{color:#ff9db1;border-color:#5c2337;background:#1e0f16}
+
+/* ---------------- claims ---------------- */
+#claims{display:flex;flex-direction:column;gap:10px}
+.claim{border:1px solid var(--line);border-left:3px solid var(--grey);border-radius:9px;
+  padding:9px 12px;background:#0c1320;animation:pop .3s ease both}
+.claim.verified,.claim.existence_in_span{border-left-color:var(--green)}
+.claim.nonexistence_in_span{border-left-color:var(--amber)}
+.claim.classification{border-left-color:var(--blue)}
+.claim.inconclusive{border-left-color:var(--grey)}
+.claim .txt{font-size:13px;color:#e6edf7}
+.claim .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px;align-items:center}
+.tag{font-family:var(--mono);font-size:10.5px;padding:1px 7px;border-radius:999px;
+  background:#0f1a2a;border:1px solid var(--line2);color:var(--fg2)}
+.tag.ev{color:#9ecbff;border-color:#25456e}
+.tag.scope{color:#b7a5ff;border-color:#3b3068;max-width:100%;overflow-wrap:anywhere}
+.empty{color:var(--fg3);font-size:12.5px;padding:6px 2px}
+.math-block{overflow-x:auto;overflow-y:hidden;padding:2px 0}
+.katex{font-size:1.02em}
+
+/* ---------------- ledger ---------------- */
+table.ledger{width:100%;border-collapse:collapse;font-size:11.5px}
+table.ledger th{text-align:left;color:var(--fg3);font-weight:600;font-size:10.5px;
+  text-transform:uppercase;letter-spacing:.06em;padding:4px 6px;border-bottom:1px solid var(--line)}
+table.ledger td{padding:4px 6px;border-bottom:1px solid #141c29;font-family:var(--mono);
+  font-size:11px;color:var(--fg2);vertical-align:top}
+table.ledger td.tool{color:#cfe0ff}
+table.ledger td.num{text-align:right;color:var(--fg3)}
+
+/* ---------------- charts ---------------- */
+canvas{display:block;width:100%}
+#drift{height:230px}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:11.5px;color:var(--fg2)}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+#renderbox img{width:100%;border-radius:9px;border:1px solid var(--line2);display:block}
+.simrow{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:8px}
+.simrow label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--fg3)}
+.simrow input,.simrow select{width:100%}
+.badge{font-family:var(--mono);font-size:10.5px;color:var(--fg3)}
+
+/* ---------------- critique / error ---------------- */
+.alert{border-radius:9px;padding:9px 12px;font-size:12.5px;border:1px solid}
+.alert.bad{background:#1d0f16;border-color:#5c2337;color:#ffb3c1}
+.alert.warn{background:#1c1708;border-color:#5a4416;color:#f3cd7a}
+.alert pre{margin:6px 0 0;white-space:pre-wrap;font-family:var(--mono);font-size:10.5px;
+  color:#e0b8c2;max-height:200px;overflow:auto}
+.spinner{width:13px;height:13px;border:2px solid #2b3b55;border-top-color:var(--accent);
+  border-radius:50%;display:inline-block;animation:spin .8s linear infinite;vertical-align:-2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------------- 启动引导遮罩 ---------------- */
+.overlay{position:fixed;inset:0;z-index:99;display:flex;align-items:center;justify-content:center;
+  background:rgba(4,7,12,.87);backdrop-filter:blur(7px);padding:24px;overflow-y:auto}
+.overlay .panel{max-width:780px;width:100%;background:linear-gradient(180deg,#141d2c,#0c121d);
+  border:1px solid #2a3a54;border-radius:16px;padding:26px 30px;
+  box-shadow:0 24px 80px rgba(0,0,0,.65);animation:pop .3s ease both}
+.overlay .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--amber);margin-bottom:8px}
+.overlay h2{margin:0 0 4px;font-size:19px;font-weight:650}
+.overlay p{color:var(--fg2);margin:10px 0;font-size:13.5px;line-height:1.75}
+.overlay b{color:var(--fg)}
+.overlay code{font-family:var(--mono);font-size:12px;background:#0a1220;
+  border:1px solid #23324a;border-radius:5px;padding:1px 6px;color:#a9e6c0}
+.overlay .cmd{position:relative;background:#060a11;border:1px solid #23324a;border-radius:10px;
+  padding:13px 78px 13px 15px;font-family:var(--mono);font-size:12.5px;color:#a9e6c0;
+  white-space:pre-wrap;word-break:break-all;margin:13px 0;line-height:1.65}
+.overlay .cmd button{position:absolute;top:8px;right:8px;padding:3px 10px;font-size:11px;
+  background:#182334;border-color:#2f4363}
+.overlay ol{margin:10px 0 0 20px;padding:0;color:var(--fg2);font-size:13.2px}
+.overlay li{margin:6px 0}
+.overlay .why{margin-top:16px;padding-top:13px;border-top:1px solid var(--line);
+  color:var(--fg3);font-size:12.3px;line-height:1.7}
+.overlay .actions{margin-top:16px;display:flex;gap:9px;flex-wrap:wrap}
+
+@media (max-width:1240px){
+  .main{grid-template-columns:1fr;overflow-y:auto}
+  .col{overflow:visible}
+  body{overflow:auto}
+  .app{height:auto}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo"></div>
+      <h1>测地流二次守恒量 · 研究 Agent <small>Killing 张量搜索 · 符号验证 · 扰动分析</small></h1>
+      <div class="chips">
+        <span class="chip"><span class="dot" id="d-sim"></span>模拟器 <b id="c-sim">…</b></span>
+        <span class="chip"><span class="dot" id="d-key"></span>密钥 <b id="c-key">…</b></span>
+        <span class="chip">模型 <b id="c-model">…</b></span>
+        <span class="chip">步数 <b id="c-steps">0</b></span>
+        <span class="chip">耗时 <b id="c-time">0s</b></span>
+      </div>
+    </div>
+    <div class="controls">
+      <textarea id="question" spellcheck="false"
+        placeholder="描述研究问题，例如：Kerr 的 Carter 常数在破坏式(54)配合关系的扰动下还能延续吗？固定 M=1, a=1/2。"></textarea>
+      <div class="btns">
+        <div class="seg" id="mode-seg">
+          <button data-mode="llm" class="on">LLM 规划</button>
+          <button data-mode="rules">规则模式</button>
+        </div>
+        <label class="badge">步数 <input type="number" id="max-steps" value="8" min="1" max="30" style="width:56px"></label>
+        <label class="badge">预算s <input type="number" id="budget" value="1200" min="60" max="7200" step="60" style="width:72px"></label>
+        <button class="primary" id="run">▶ 开始研究</button>
+        <button class="danger" id="cancel" disabled>停止</button>
+      </div>
+    </div>
+    <div class="btns" style="margin-top:8px">
+      <span class="hint">示例：</span>
+      <button data-q="二维模型 g=(1+x^2+2y^2+eps*x^2*y^2)(dx^2+dy^2)：eps=0 时的第二个二次守恒量，在 eps 非零之后还存在吗？">二维 ε 扰动</button>
+      <button data-q="Kerr 时空的 Carter 常数，在破坏 Vigeland-Yunes-Stein 式(54)配合关系的度量扰动下，还能不能延续为一阶守恒量？请分类：哪些扰动方向允许延续、哪些被排除。固定 M=1, a=1/2。">Kerr 一阶分类</button>
+      <button data-q="Kerr 背景 M=1, a=0.9：在声明的候选空间内，除了 H 与 p_t,p_phi 之外还有没有独立的二次守恒量？">Kerr 背景搜索</button>
+      <span class="hint" id="runstate" style="margin-left:auto"></span>
+    </div>
+  </header>
+
+  <div class="main">
+    <!-- ============ 左：时间线 ============ -->
+    <div class="col">
+      <div class="card grow">
+        <h2>实验时间线 <span class="sp" id="tl-count"></span></h2>
+        <div class="body"><ol id="timeline"></ol>
+          <div class="empty" id="tl-empty">还没有实验。输入问题后点「开始研究」。</div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>台账 <span class="sp" id="ledger-count"></span></h2>
+        <div class="body" style="padding:6px 8px">
+          <table class="ledger" id="ledger"><thead><tr>
+            <th>#</th><th>工具</th><th>判定</th><th class="num">s</th>
+          </tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 中：结论 ============ -->
+    <div class="col">
+      <div class="card">
+        <h2>结论 <span class="sp" id="claims-count"></span></h2>
+        <div class="body" id="claims"><div class="empty">等待 Agent 提交结论。</div></div>
+      </div>
+      <div class="card">
+        <h2>策略守门 <span class="sp" id="gate-state">待命</span></h2>
+        <div class="body" id="gate"><div class="empty">结论提交后会在这里接受证据检查。</div></div>
+      </div>
+      <div class="card">
+        <h2>研究报告 <span class="sp" id="report-state"></span></h2>
+        <div class="body"><pre id="report" style="margin:0;white-space:pre-wrap;font-family:var(--mono);font-size:11px;color:#9fb0c8;max-height:340px;overflow:auto">运行结束后生成。</pre></div>
+      </div>
+    </div>
+
+    <!-- ============ 右：模拟器 ============ -->
+    <div class="col">
+      <div class="card">
+        <h2>黑洞模拟器 <span class="sp" id="sim-state"></span></h2>
+        <div class="body">
+          <div class="simrow">
+            <label>预设
+              <select id="sim-preset"><option value="">（自定义）</option></select>
+            </label>
+            <label>观测量
+              <select id="sim-labels">
+                <option value="Q_C,H">Carter Q + H</option>
+                <option value="Q_C">仅 Carter Q</option>
+                <option value="H">仅 H</option>
+              </select>
+            </label>
+            <label>a / M <input type="number" id="sim-a" value="0.9" step="0.05" min="-0.99" max="0.99"></label>
+            <label>r₀ <input type="number" id="sim-r" value="9" step="0.5" min="2"></label>
+            <label>θ₀ (deg) <input type="number" id="sim-theta" value="62" step="1" min="1" max="179"></label>
+            <label>时长 λ <input type="number" id="sim-dur" value="700" step="50" min="50"></label>
+          </div>
+          <div class="btns">
+            <button id="sim-monitor">监测候选 Q 漂移</button>
+            <button id="sim-render">渲染图像</button>
+          </div>
+          <div class="hint" id="sim-note" style="margin-top:8px">
+            用符号层的 K<sup>μν</sup> 沿模拟器积分出的轨道求 Q，漂移越小越可信。
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>候选 Q 漂移 <span class="sp" id="drift-state">—</span></h2>
+        <div class="body">
+          <canvas id="drift"></canvas>
+          <div class="legend" id="drift-legend"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>观察者成像 <span class="sp" id="img-state">—</span></h2>
+        <div class="body" id="renderbox">
+          <div class="empty">点「渲染图像」调用模拟器的 CUDA 光线追踪。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const fmt = (x, d = 3) => (x == null || Number.isNaN(x)) ? "—" : (Math.abs(x) >= 1e4 || (Math.abs(x) < 1e-3 && x !== 0) ? x.toExponential(2) : Number(x).toFixed(d));
+const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const KIND_CN = {
+  existence: "存在解", nonexistence_in_span: "空间内无额外解",
+  classification: "分类", artifact: "网格伪解", inconclusive: "未定", info: "信息",
+  verified: "已验证"
+};
+
+/* ---------- KaTeX ---------- */
+let katexReady = false;
+function tex(src, display) {
+  if (!window.katex) return `<code>${esc(src)}</code>`;
+  try { return katex.renderToString(src, { throwOnError: false, displayMode: !!display }); }
+  catch (e) { return `<code>${esc(src)}</code>`; }
+}
+function mdMath(text) {
+  let s = esc(text);
+  s = s.replace(/\$\$([\s\S]+?)\$\$/g, (_, m) => `<div class="math-block">${tex(m, true)}</div>`);
+  s = s.replace(/\$([^$\n]+?)\$/g, (_, m) => tex(m, false));
+  s = s.replace(/\n/g, "<br>");
+  return s;
+}
+
+/* ---------- 状态 ---------- */
+const S = { info: null, mode: "llm", runId: null, es: null, steps: 0, secs: 0 };
+
+/* ---------- 初始化 ---------- */
+function overlay({ kicker, title, lead, cmd, steps, why, actions }) {
+  const ov = document.createElement("div");
+  ov.className = "overlay";
+  const copyId = "cmd_" + Math.random().toString(36).slice(2, 8);
+  ov.innerHTML = `<div class="panel">
+    <div class="kicker">${esc(kicker || "需要启动后端")}</div>
+    <h2>${esc(title)}</h2>
+    <p>${lead}</p>
+    ${cmd ? `<div class="cmd" id="${copyId}"><button onclick="copyCmd('${copyId}')">复制</button>${esc(cmd)}</div>` : ""}
+    ${steps && steps.length ? `<ol>${steps.map(s => `<li>${s}</li>`).join("")}</ol>` : ""}
+    ${why ? `<div class="why">${why}</div>` : ""}
+    <div class="actions">${(actions || []).map((a, i) =>
+      `<button class="${i === 0 ? "primary" : ""}" onclick="${a.onclick}">${esc(a.label)}</button>`).join("")}</div>
+  </div>`;
+  document.body.appendChild(ov);
+  return ov;
+}
+
+function copyCmd(id) {
+  const node = document.getElementById(id);
+  const text = node.childNodes[node.childNodes.length - 1].textContent.trim();
+  navigator.clipboard.writeText(text).then(
+    () => { node.querySelector("button").textContent = "已复制"; },
+    () => { node.querySelector("button").textContent = "请手动选中"; });
+}
+
+function fileProtocolOverlay() {
+  const dir = decodeURIComponent(location.pathname).replace(/[\\/]ui[\\/]index\.html?$/i, "");
+  const cmd = `cd "${dir}"\npython ui\\server.py --port 8765 --open`;
+  overlay({
+    kicker: "不能直接双击打开",
+    title: "这个页面需要通过本地服务访问",
+    lead: `这是一个<b>前端</b>：页面本身只负责显示，真正的计算——SymPy 的精确符号运算、`
+        + `黑洞模拟器的 CUDA 光线追踪——都在本地 Python 进程里跑。`
+        + `你现在看到的是 <code>file://</code> 地址，页面发出的 <code>/api/...</code> 请求`
+        + `会变成 <code>file:///api/...</code>，浏览器会直接拒绝。`,
+    cmd,
+    steps: [
+      "打开 PowerShell（Win+X → 终端）",
+      "粘贴上面两行命令，回车",
+      "浏览器会自动打开 <code>http://127.0.0.1:8765/</code>；以后直接刷新这个地址即可",
+      `更省事的办法：双击 <code>${esc(dir)}\\启动界面.bat</code>`,
+    ],
+    why: "为什么浏览器里跑不了？—— Kerr 一阶分类一次要做约 130 秒的精确有理数线性代数，"
+       + "Pyodide 之类在浏览器内跑 SymPy 会慢一到两个数量级；模拟器则是 C++/CUDA 原生程序，"
+       + "浏览器无法调用。所以架构必须是「浏览器看 + Python 算」。",
+    actions: [{ label: "我已启动，重试连接", onclick: "location.href='http://127.0.0.1:8765/'" }],
+  });
+}
+
+function unreachableOverlay() {
+  overlay({
+    kicker: "连不上后端",
+    title: "页面加载了，但 /api/info 没有响应",
+    lead: "后端服务可能没启动，或者端口不是 8765。在 <code>程序\\agent</code> 目录下运行：",
+    cmd: "python ui\\server.py --port 8765 --open",
+    why: "如果端口被占用，换一个：<code>python ui\\server.py --port 8800 --open</code>，"
+       + "然后把地址里的端口一起改掉。",
+    actions: [
+      { label: "重新连接", onclick: "location.reload()" },
+      { label: "打开 8765", onclick: "location.href='http://127.0.0.1:8765/'" },
+    ],
+  });
+}
+
+async function boot() {
+  if (location.protocol === "file:") { fileProtocolOverlay(); return; }
+  let resp;
+  try {
+    resp = await fetch("/api/info");
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    S.info = await resp.json();
+  } catch (e) {
+    $("#runstate").textContent = "无法连接后端服务";
+    unreachableOverlay();
+    return;
+  }
+  const info = S.info;
+  const simOk = info.simulator;
+  $("#d-sim").className = "dot " + (simOk ? "ok" : "bad");
+  $("#c-sim").textContent = simOk ? "就绪" : "缺失";
+  $("#d-key").className = "dot " + (info.has_key ? "ok" : "warn");
+  $("#c-key").textContent = info.has_key ? "已设置" : "未设置";
+  $("#c-model").textContent = info.model;
+  $("#sim-state").textContent = simOk ? `${info.presets.length} 预设` : "不可用";
+  const sel = $("#sim-preset");
+  info.presets.forEach(p => {
+    const o = document.createElement("option");
+    o.value = p.id; o.textContent = p.title;
+    sel.appendChild(o);
+  });
+  if (info.presets.length) sel.value = "kerr_inclined";
+  sel.onchange = () => { if (sel.value) $("#sim-a").value = (sel.value.startsWith("kerr") ? 0.9 : 0.0); };
+  if (!simOk) { $("#sim-monitor").disabled = true; $("#sim-render").disabled = true; }
+  drawDrift([]);
+}
+
+/* ---------- 运行 ---------- */
+$("#mode-seg").onclick = e => {
+  const b = e.target.closest("button"); if (!b) return;
+  [...$("#mode-seg").children].forEach(x => x.classList.toggle("on", x === b));
+  S.mode = b.dataset.mode;
+};
+document.querySelectorAll("[data-q]").forEach(b => b.onclick = () => { $("#question").value = b.dataset.q; });
+
+$("#run").onclick = async () => {
+  const question = $("#question").value.trim();
+  if (!question) { $("#question").focus(); return; }
+  reset();
+  $("#run").disabled = true; $("#cancel").disabled = false;
+  $("#runstate").innerHTML = '<span class="spinner"></span> 启动中…';
+  let res;
+  try {
+    res = await (await fetch("/api/run", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question, mode: S.mode,
+        max_steps: +$("#max-steps").value, budget: +$("#budget").value
+      })
+    })).json();
+  } catch (e) { fail("启动失败：" + e); return; }
+  if (res.error) { fail(res.error + (res.detail ? "\n" + res.detail : "")); return; }
+  S.runId = res.run_id;
+  $("#runstate").textContent = "运行中 · " + res.run_id;
+  openStream(res.run_id);
+};
+
+$("#cancel").onclick = async () => {
+  if (!S.runId) return;
+  await fetch(`/api/run/${S.runId}/cancel`, { method: "POST" });
+  $("#cancel").disabled = true;
+};
+
+function fail(msg) {
+  $("#run").disabled = false; $("#cancel").disabled = true;
+  $("#runstate").textContent = "失败";
+  $("#gate").appendChild(el("div", "alert bad", `<b>出错</b><pre>${esc(msg)}</pre>`));
+}
+
+function reset() {
+  if (S.es) { S.es.close(); S.es = null; }
+  S.steps = 0; S.secs = 0; S.runId = null;
+  $("#timeline").innerHTML = ""; $("#tl-empty").style.display = "block";
+  $("#tl-count").textContent = ""; $("#ledger tbody").innerHTML = "";
+  $("#ledger-count").textContent = "";
+  $("#claims").innerHTML = '<div class="empty">等待 Agent 提交结论。</div>';
+  $("#claims-count").textContent = "";
+  $("#gate").innerHTML = '<div class="empty">结论提交后会在这里接受证据检查。</div>';
+  $("#gate-state").textContent = "待命";
+  $("#report").textContent = "运行结束后生成。";
+  $("#report-state").textContent = "";
+  $("#c-steps").textContent = "0"; $("#c-time").textContent = "0s";
+}
+
+function openStream(runId) {
+  const es = new EventSource(`/api/run/${runId}/stream`);
+  S.es = es;
+  es.onmessage = ev => {
+    let data; try { data = JSON.parse(ev.data); } catch (e) { return; }
+    handle(data);
+    if (data.type === "close") { es.close(); S.es = null; done(); }
+  };
+  es.onerror = () => { /* 浏览器会自动重连；close 时我们自己关 */ };
+}
+
+function done() {
+  $("#run").disabled = false; $("#cancel").disabled = true;
+  $("#runstate").textContent = "已完成";
+}
+
+/* ---------- 事件分发 ---------- */
+function handle(ev) {
+  switch (ev.type) {
+    case "start":
+      $("#runstate").textContent = `运行中 · ${ev.mode === "llm" ? "LLM 规划" : "规则模式"}`;
+      break;
+    case "round":
+      $("#runstate").textContent = `第 ${ev.round}/${ev.max} 轮`;
+      break;
+    case "thinking": addThinking(ev); break;
+    case "plan": addPlan(ev); break;
+    case "note": break;
+    case "step": addStep(ev); break;
+    case "critique": addCritique(ev); break;
+    case "accepted": acceptGate(ev); break;
+    case "final": renderClaims(ev); break;
+    case "done": {
+      $("#report").textContent = ev.report || "";
+      $("#report-state").textContent = ev.run_dir ? ev.run_dir.split(/[\\/]/).pop() : "";
+      break;
+    }
+    case "error": fail(ev.message + (ev.traceback ? "\n\n" + ev.traceback : "")); break;
+  }
+}
+
+function addThinking(ev) {
+  const li = el("li", "step");
+  li.dataset.kind = "info";
+  li.innerHTML = `<div class="top"><span class="n">·</span>
+    <span class="tool" style="color:#a99bff">thinking</span>
+    <span class="sec">round ${ev.round}</span></div>
+    <details><summary>展开模型推理</summary><pre>${esc(ev.text)}</pre></details>`;
+  $("#timeline").appendChild(li);
+  $("#tl-empty").style.display = "none";
+}
+
+function addPlan(ev) {
+  const li = el("li", "step");
+  li.dataset.kind = "info";
+  li.innerHTML = `<div class="top"><span class="n">·</span>
+    <span class="tool" style="color:#8fe3c0">plan</span>
+    <span class="kind info">规则</span></div>
+    <div class="why">${esc(ev.why || "")}</div>`;
+  $("#timeline").appendChild(li);
+}
+
+function briefHTML(tool, b) {
+  if (!b) return "";
+  if (b.error) return `<div class="alert bad" style="margin-top:7px">${esc(b.error)}: ${esc(b.message)}</div>`;
+  const stats = [];
+  const add = (k, v, hot) => stats.push(`<span class="stat${hot ? " hot" : ""}">${k} <b>${esc(v)}</b></span>`);
+
+  if (tool === "killing_search") {
+    add("未知数", b.unknowns); add("方程", b.equations);
+    add("秩", b.rank); add("解空间", b.nullity);
+    add("已知", b.known_dim); add("gap", b.gap, b.gap > 0);
+  } else if (tool === "verify_quantity") {
+    add("{Q,H}", b.poisson_zero ? "= 0" : "≠ 0", !b.poisson_zero);
+    if (b.first_nonzero) add("首个非零", JSON.stringify(b.first_nonzero.momentum_power || ""));
+  } else if (tool === "scan_parameter") {
+    (b.table || []).forEach(r => add(r.value, "nullity " + r.nullity, (b.transition_indices || []).includes(b.table.indexOf(r))));
+  } else if (tool === "first_order_classification") {
+    const v = b.verdict || {};
+    const ok = Object.values(v).filter(x => x === "ALLOWED").length;
+    add("扰动基", Object.keys(v).length); add("允许", ok, ok > 0);
+    add("核", b.kernel_dimension); add("齐次", b.homogeneous_dimension);
+    add("允许子空间", b.allowed_perturbation_dimension);
+    add("Q1 基", b.q1_generators);
+  } else if (tool === "numeric_check") {
+    add("场景", b.scene); add("采样", b.samples);
+    add("Q₀", fmt(b.v0, 6));
+    add("相对漂移", (b.rel_drift ?? 0).toExponential(2), (b.rel_drift ?? 0) > 1e-6);
+    if (b.simulator_carter_rel_drift != null) add("Carter 对照", b.simulator_carter_rel_drift.toExponential(2));
+  } else if (tool === "inspect_background") {
+    add("维数", (b.metric || []).length);
+    add("不变量", (b.known_invariants || []).map(k => k.label).join(", "));
+  }
+  let html = stats.length ? `<div class="stats">${stats.join("")}</div>` : "";
+
+  if (tool === "first_order_classification" && b.verdict) {
+    html += `<div class="verdict">${Object.entries(b.verdict).map(([k, x]) =>
+      `<span class="vd ${x === "ALLOWED" ? "ok" : "no"}" title="${esc(k)}">${esc(k.replace(/^eq54/, "A"))}</span>`).join("")}</div>`;
+  }
+  if (tool === "killing_search" && b.solutions && b.solutions.length) {
+    html += `<details><summary>${b.solutions.length} 个解</summary><pre>${esc(b.solutions.map(s => s.Q).join("\n\n"))}</pre></details>`;
+  }
+  if (tool === "verify_quantity" && b.first_nonzero) {
+    html += `<details><summary>残差</summary><pre>${esc(JSON.stringify(b.first_nonzero, null, 1))}</pre></details>`;
+  }
+  if (tool === "numeric_check") {
+    html += `<div class="hint" style="margin-top:6px">数值检验：${esc(b.label || "")} 沿轨道
+      ${(b.rel_drift ?? 0) < 1e-6 ? "守恒（与符号结论一致）" : "不守恒"}</div>`;
+  }
+  return html;
+}
+
+function addStep(ev) {
+  S.steps = ev.step; S.secs = ev.totals ? ev.totals.seconds : S.secs;
+  $("#c-steps").textContent = S.steps;
+  $("#c-time").textContent = fmt(S.secs, 1) + "s";
+  $("#tl-empty").style.display = "none";
+
+  const args = ev.args || {};
+  const isFinish = ev.tool === "finish";
+  const argStr = isFinish
+    ? `claims=${(args.claims || []).length}　${(args.summary || "").slice(0, 80)}…`
+    : Object.entries(args)
+        .filter(([k]) => k !== "Q")
+        .map(([k, v]) => `${k}=${typeof v === "object" ? JSON.stringify(v) : v}`)
+        .join("  ");
+
+  const li = el("li", "step");
+  li.dataset.kind = ev.kind || "info";
+  li.innerHTML = `
+    <div class="top">
+      <span class="n">#${ev.step}</span>
+      <span class="tool">${esc(ev.tool)}</span>
+      <span class="kind ${esc(ev.kind)}">${esc(KIND_CN[ev.kind] || ev.kind)}</span>
+      <span class="sec">${fmt(ev.seconds, 1)}s</span>
+    </div>
+    ${ev.reason ? `<div class="why">${esc(ev.reason)}</div>` : ""}
+    ${argStr ? `<div class="args">${esc(argStr)}</div>` : ""}
+    ${briefHTML(ev.tool, ev.brief)}`;
+  $("#timeline").appendChild(li);
+  li.scrollIntoView({ block: "nearest", behavior: "smooth" });
+
+  const tr = document.createElement("tr");
+  tr.innerHTML = `<td class="num">${ev.step}</td><td class="tool">${esc(ev.tool)}</td>
+    <td><span class="kind ${esc(ev.kind)}">${esc(KIND_CN[ev.kind] || ev.kind)}</span></td>
+    <td class="num">${fmt(ev.seconds, 1)}</td>`;
+  $("#ledger tbody").appendChild(tr);
+  $("#ledger-count").textContent = S.steps + " 次";
+}
+
+function addCritique(ev) {
+  $("#gate-state").textContent = `打回 ${ev.attempt} 次`;
+  const box = el("div", "alert warn");
+  box.innerHTML = `<b>结论未通过检查（第 ${ev.attempt} 次）</b><pre>${esc(
+    (ev.problems || []).map(p => `· [${p.type}] ${p.message}${p.claim ? " (claim " + p.claim + ")" : ""}`).join("\n")
+  )}</pre>`;
+  $("#gate").innerHTML = ""; $("#gate").appendChild(box);
+}
+
+function acceptGate(ev) {
+  $("#gate-state").textContent = "通过";
+  $("#gate").innerHTML = `<div class="alert" style="background:#0d2118;border-color:#1f6b45;color:#8ef0b8">
+    <b>✓ 证据与措辞检查通过</b> · ${(ev.claims || []).length} 条结论全部绑定到具体工具调用</div>`;
+}
+
+function renderClaims(ev) {
+  const claims = ev.claims || [];
+  $("#claims-count").textContent = claims.length + " 条";
+  const box = $("#claims");
+  box.innerHTML = "";
+  if (!claims.length) { box.innerHTML = '<div class="empty">没有提交结论。</div>'; return; }
+  claims.forEach(c => {
+    const d = el("div", "claim " + (c.status || "inconclusive"));
+    d.innerHTML = `<div class="txt">${mdMath(c.text || "")}</div>
+      <div class="meta">
+        <span class="tag">${esc(KIND_CN[c.status] || c.status)}</span>
+        ${(c.evidence || []).map(e => `<span class="tag ev">证据 #${e}</span>`).join("")}
+        ${c.scope ? `<span class="tag scope">${esc(c.scope)}</span>` : ""}
+      </div>`;
+    box.appendChild(d);
+  });
+  if (ev.summary) {
+    const s = el("div", "card");
+    s.innerHTML = `<h2>总结</h2><div class="body" style="font-size:13px">${mdMath(ev.summary)}</div>`;
+    box.appendChild(s);
+  }
+}
+
+/* ---------- 漂移图 ---------- */
+const PALETTE = ["#4ea1ff", "#35d07f", "#f0b429", "#ff5c7a", "#b388ff", "#39d5d0"];
+
+function drawDrift(series) {
+  const cv = $("#drift");
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.clientWidth || 420, H = 230;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const g = cv.getContext("2d");
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, W, H);
+
+  const padL = 46, padR = 10, padT = 12, padB = 26;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  g.strokeStyle = "#1b2534"; g.lineWidth = 1;
+  g.strokeRect(padL, padT, plotW, plotH);
+
+  if (!series || !series.length) {
+    g.fillStyle = "#4a5568"; g.font = "12px ui-monospace, monospace";
+    g.fillText("尚未监测", padL + 10, padT + 22);
+    $("#drift-legend").innerHTML = "";
+    return;
+  }
+
+  let lamMax = 0, lo = -16, hi = -2;
+  series.forEach(s => {
+    lamMax = Math.max(lamMax, s.lam[s.lam.length - 1] || 0);
+    s.drift.forEach(d => {
+      const v = Math.log10(Math.max(Math.abs(d), 1e-16));
+      lo = Math.min(lo, v); hi = Math.max(hi, v);
+    });
+  });
+  lo = Math.max(-16, Math.floor(lo)); hi = Math.min(2, Math.ceil(hi));
+  if (hi - lo < 2) hi = lo + 2;
+
+  const X = l => padL + plotW * (lamMax > 0 ? l / lamMax : 0);
+  const Y = v => padT + plotH * (1 - (Math.log10(Math.max(Math.abs(v), 1e-16)) - lo) / (hi - lo));
+
+  g.font = "10px ui-monospace, monospace";
+  for (let e = lo; e <= hi; e++) {
+    const y = padT + plotH * (1 - (e - lo) / (hi - lo));
+    g.strokeStyle = e === 0 ? "#2b3a52" : "#141c29";
+    g.beginPath(); g.moveTo(padL, y); g.lineTo(padL + plotW, y); g.stroke();
+    g.fillStyle = "#4a5568";
+    g.fillText("1e" + e, 6, y + 3);
+  }
+  g.fillStyle = "#4a5568";
+  g.fillText("λ", padL + plotW - 8, H - 8);
+  g.fillText("0", padL - 3, H - 8);
+  g.fillText(fmt(lamMax, 0), padL + plotW - 30, H - 8);
+
+  series.forEach((s, i) => {
+    const col = PALETTE[i % PALETTE.length];
+    g.strokeStyle = col; g.lineWidth = 1.8; g.beginPath();
+    let started = false;
+    s.drift.forEach((d, j) => {
+      const x = X(s.lam[j]), y = Y(d);
+      if (!started) { g.moveTo(x, y); started = true; } else g.lineTo(x, y);
+    });
+    g.stroke();
+  });
+
+  $("#drift-legend").innerHTML = series.map((s, i) =>
+    `<span><i style="background:${PALETTE[i % PALETTE.length]}"></i>${esc(s.label)}
+     <span style="color:#64748b">|ΔQ/Q|max=${s.max_abs_drift.toExponential(1)}</span></span>`).join("");
+}
+
+window.addEventListener("resize", () => { if (window.__lastSeries) drawDrift(window.__lastSeries); });
+
+/* ---------- 模拟器 ---------- */
+function simPayload() {
+  const preset = $("#sim-preset").value;
+  const M = 1.0, a = +$("#sim-a").value;
+  if (preset) return { preset, parameters: { M: String(M), a: String(a) }, labels: $("#sim-labels").value.split(",") };
+  return {
+    custom: { M, a, r: +$("#sim-r").value, theta_deg: +$("#sim-theta").value, duration: +$("#sim-dur").value },
+    parameters: { M: String(M), a: String(a) },
+    labels: $("#sim-labels").value.split(",")
+  };
+}
+
+$("#sim-monitor").onclick = async () => {
+  const btn = $("#sim-monitor"); btn.disabled = true; btn.textContent = "积分中…";
+  $("#drift-state").textContent = "运行";
+  try {
+    const payload = simPayload();
+    payload.perturb = { label: "Q_C", delta: 0.05 };
+    const res = await (await fetch("/api/sim/monitor", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })).json();
+    if (res.error) { $("#drift-state").textContent = "失败"; $("#sim-note").textContent = res.error + " " + (res.detail || ""); return; }
+    window.__lastSeries = res.series;
+    drawDrift(res.series);
+    const b = res.body || {};
+    $("#drift-state").textContent = `${b.samples} 采样`;
+    $("#sim-note").innerHTML =
+      `轨道：${esc(b.name || "")} · ${esc(b.stop || "")}　` +
+      `Carter 相对漂移 <b>${res.carter ? res.carter.rel_drift.toExponential(2) : "—"}</b>　` +
+      `2H 跨度 <b>${res.hamiltonian && res.hamiltonian.ok ? res.hamiltonian.spread.toExponential(1) : "—"}</b>`;
+  } catch (e) {
+    $("#drift-state").textContent = "失败";
+    $("#sim-note").textContent = String(e);
+  } finally { btn.disabled = false; btn.textContent = "监测候选 Q 漂移"; }
+};
+
+$("#sim-render").onclick = async () => {
+  const btn = $("#sim-render"); btn.disabled = true; btn.textContent = "渲染中…";
+  $("#img-state").textContent = "CUDA";
+  try {
+    const p = simPayload();
+    delete p.labels; delete p.parameters;
+    const res = await (await fetch("/api/sim/render", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...p, width: 900, height: 506, steps: 8000 })
+    })).json();
+    if (res.error) { $("#img-state").textContent = "失败"; $("#renderbox").innerHTML = `<div class="alert bad">${esc(res.error)}</div>`; return; }
+    $("#renderbox").innerHTML = `<img src="${res.url}" alt="black hole render">`;
+    $("#img-state").textContent = "完成";
+  } catch (e) {
+    $("#img-state").textContent = "失败";
+    $("#renderbox").innerHTML = `<div class="alert bad">${esc(String(e))}</div>`;
+  } finally { btn.disabled = false; btn.textContent = "渲染图像"; }
+};
+
+boot();
+
+/* ---------- 演示/自动化：?q=...&mode=rules&auto=1&sim=1&render=1 ---------- */
+(function demoParams() {
+  const P = new URLSearchParams(location.search);
+  const q = P.get("q");
+  if (q) $("#question").value = q;
+  const mode = P.get("mode");
+  if (mode === "rules" || mode === "llm") {
+    S.mode = mode;
+    [...$("#mode-seg").children].forEach(b => b.classList.toggle("on", b.dataset.mode === mode));
+  }
+  if (P.get("steps")) $("#max-steps").value = P.get("steps");
+  if (P.get("budget")) $("#budget").value = P.get("budget");
+  if (P.get("preset")) setTimeout(() => { $("#sim-preset").value = P.get("preset"); }, 500);
+  if (P.get("sim") === "1") setTimeout(() => $("#sim-monitor").click(), 700);
+  if (P.get("render") === "1") setTimeout(() => $("#sim-render").click(), 900);
+  if (P.get("auto") === "1") setTimeout(() => $("#run").click(), 600);
+})();
+</script>
+</body>
+</html>

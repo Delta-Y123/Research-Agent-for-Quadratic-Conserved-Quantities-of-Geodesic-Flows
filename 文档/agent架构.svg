@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 850" width="1240" height="850" font-family="-apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+    <marker id="arrLoop" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#ef4444"/>
+    </marker>
+    <style>
+      .bt{font-size:15px;font-weight:650;fill:#0f172a}
+      .bs{font-size:11.5px;fill:#475569}
+      .bl{font-size:11px;fill:#94a3b8}
+      .lbl{font-size:11.5px;fill:#64748b}
+      .lblR{font-size:11.5px;fill:#ef4444;font-weight:600}
+      .box{stroke-width:1.6;rx:10}
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1240" height="850" fill="#ffffff"/>
+
+  <!-- ================= B1 输入 ================= -->
+  <rect class="box" x="170" y="40" width="900" height="58" rx="10" fill="#f1f5f9" stroke="#94a3b8"/>
+  <text class="bt" x="620" y="63" text-anchor="middle">研究问题（自然语言）</text>
+  <text class="bs" x="620" y="84" text-anchor="middle">「Kerr 的 Carter 常数在破坏式 (54) 配合关系的扰动下还能延续吗？」</text>
+
+  <line x1="620" y1="98" x2="620" y2="138" stroke="#64748b" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text class="lbl" x="632" y="122">① 提出问题</text>
+
+  <!-- ================= B2 规划 ================= -->
+  <rect class="box" x="170" y="140" width="480" height="86" rx="10" fill="#eff6ff" stroke="#3b82f6"/>
+  <text class="bt" x="410" y="166" text-anchor="middle">agent.py　主循环</text>
+  <text class="bs" x="410" y="188" text-anchor="middle">选动作 · 调工具 · 读诊断 · 决定下一步</text>
+  <text class="bs" x="410" y="207" text-anchor="middle">带步数上限、时间预算、取消开关</text>
+
+  <rect class="box" x="700" y="140" width="370" height="86" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-dasharray="5 4"/>
+  <text class="bt" x="885" y="166" text-anchor="middle">llm.py → MiMo-V2.6-Pro</text>
+  <text class="bs" x="885" y="188" text-anchor="middle">只负责「下一步做什么」</text>
+  <text class="bs" x="885" y="207" text-anchor="middle">不判断等式是否为零</text>
+
+  <line x1="654" y1="170" x2="696" y2="170" stroke="#64748b" stroke-width="1.6" marker-end="url(#arr)"/>
+  <line x1="696" y1="196" x2="654" y2="196" stroke="#64748b" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text class="lbl" x="675" y="150" text-anchor="middle">②</text>
+
+  <line x1="410" y1="226" x2="410" y2="280" stroke="#64748b" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text class="lbl" x="422" y="250">③ tool_call（JSON schema）</text>
+
+  <!-- ================= B3 工具层 ================= -->
+  <rect class="box" x="170" y="282" width="900" height="76" rx="10" fill="#f5f3ff" stroke="#8b5cf6"/>
+  <text class="bt" x="620" y="306" text-anchor="middle">tools.py　　8 个工具（schema + dispatch）</text>
+  <text class="bs" x="620" y="328" text-anchor="middle">list_backgrounds · inspect_background · killing_search · verify_quantity</text>
+  <text class="bs" x="620" y="346" text-anchor="middle">scan_parameter · first_order_classification · numeric_check · finish</text>
+
+  <line x1="400" y1="358" x2="400" y2="402" stroke="#64748b" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text class="lbl" x="412" y="382">④a 精确符号</text>
+  <line x1="880" y1="358" x2="880" y2="402" stroke="#64748b" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text class="lbl" x="892" y="382">④b 数值检验</text>
+
+  <!-- ================= B4 双引擎 ================= -->
+  <rect class="box" x="170" y="404" width="460" height="112" rx="10" fill="#ecfdf5" stroke="#10b981"/>
+  <text class="bt" x="400" y="428" text-anchor="middle">L1 内核（精确有理数）</text>
+  <text class="bs" x="400" y="450" text-anchor="middle">engine.py · backgrounds.py</text>
+  <text class="bs" x="400" y="469" text-anchor="middle">families.py · solvers.py</text>
+  <text class="bs" x="400" y="492" text-anchor="middle">泊松括号 · 秩与零空间 · 网格自证</text>
+
+  <rect class="box" x="690" y="404" width="380" height="112" rx="10" fill="#fff7ed" stroke="#f59e0b"/>
+  <text class="bt" x="880" y="428" text-anchor="middle">黑洞模拟器（C++ / CUDA）</text>
+  <text class="bs" x="880" y="450" text-anchor="middle">simulator.py ↔ bh_cli.exe</text>
+  <text class="bs" x="880" y="469" text-anchor="middle">积分测地线 → 输出 (xμ, pμ)</text>
+  <text class="bs" x="880" y="492" text-anchor="middle">同一个 Kμν 沿轨道求 Q</text>
+
+  <line x1="400" y1="516" x2="400" y2="558" stroke="#64748b" stroke-width="1.6" marker-end="url(#arr)"/>
+  <line x1="880" y1="516" x2="880" y2="558" stroke="#64748b" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text class="lbl" x="620" y="542" text-anchor="middle">⑤ 结果 + 证书</text>
+
+  <!-- ================= B5 证据 ================= -->
+  <rect class="box" x="170" y="560" width="900" height="86" rx="10" fill="#fef2f2" stroke="#ef4444"/>
+  <text class="bt" x="620" y="584" text-anchor="middle">policy.diagnose → 诊断签名（5 类 kind）+ 建议动作</text>
+  <text class="bs" x="620" y="606" text-anchor="middle">existence / nonexistence_in_span / classification / artifact / inconclusive</text>
+  <text class="bs" x="620" y="626" text-anchor="middle">ledger.py 台账（jsonl）· 证书类型 · 适用范围 · 决策规则 R1–R9</text>
+
+  <line x1="620" y1="646" x2="620" y2="688" stroke="#64748b" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text class="lbl" x="632" y="672">⑥ 定稿</text>
+
+  <!-- ================= B6 输出 ================= -->
+  <rect class="box" x="170" y="690" width="900" height="70" rx="10" fill="#f8fafc" stroke="#64748b"/>
+  <text class="bt" x="620" y="714" text-anchor="middle">report.md　+　浏览器界面</text>
+  <text class="bs" x="620" y="736" text-anchor="middle">实验时间线 · 结论与证书 · 候选 Q 漂移曲线 · 黑洞成像</text>
+
+  <!-- ================= 守门/回灌回路 ================= -->
+  <path d="M170,603 L104,603 L104,183 L166,183" fill="none" stroke="#ef4444" stroke-width="1.8"
+        stroke-dasharray="6 4" marker-end="url(#arrLoop)"/>
+  <text class="lblR" x="94" y="400" text-anchor="middle" transform="rotate(-90 94 400)">诊断回灌 / 守门打回</text>
+
+  <!-- ================= 图例 ================= -->
+  <g transform="translate(170, 792)">
+    <rect x="0" y="-9" width="11" height="11" rx="3" fill="#eff6ff" stroke="#3b82f6"/>
+    <text class="bl" x="17" y="1">规划</text>
+    <rect x="60" y="-9" width="11" height="11" rx="3" fill="#f5f3ff" stroke="#8b5cf6"/>
+    <text class="bl" x="77" y="1">工具</text>
+    <rect x="120" y="-9" width="11" height="11" rx="3" fill="#ecfdf5" stroke="#10b981"/>
+    <text class="bl" x="137" y="1">符号内核</text>
+    <rect x="200" y="-9" width="11" height="11" rx="3" fill="#fff7ed" stroke="#f59e0b"/>
+    <text class="bl" x="217" y="1">数值模拟器</text>
+    <rect x="296" y="-9" width="11" height="11" rx="3" fill="#fef2f2" stroke="#ef4444"/>
+    <text class="bl" x="313" y="1">证据与守门</text>
+    <line x1="392" y1="-3" x2="422" y2="-3" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="6 4"/>
+    <text class="bl" x="428" y="1">反馈回路</text>
+  </g>
+  <text class="bl" x="1070" y="795" text-anchor="end">模型只选动作，结论由证书决定</text>
+</svg>
