@@ -270,66 +270,14 @@ $env:MIMO_API_KEY = "sk-..."
 ```
 
 ### 6.2 例一：二维模型，$\varepsilon$ 扰动
-
-```powershell
-cd 程序\agent
-python cli.py ask "二维模型 g=(1+x^2+2y^2+eps*x^2*y^2)(dx^2+dy^2)：eps=0 时的第二个二次守恒量，在 eps 非零之后还存在吗？" --max-steps 8
-```
-
-模型自己走完了：`list_backgrounds` → `inspect_background`（$\varepsilon=0,1$）→ `killing_search`（秩 16/17）→ `verify_quantity`（确认 $Q_0$ 在 $\varepsilon=1$ 下不守恒，首个非零系数在 $p_y^3$）→ `scan_parameter`（分岔点 $\varepsilon=1$）→ `finish`。
-
-生成的报告节选：
-
-```
-### 仅在有限候选空间内成立
-- conformal2d（epsilon=0）在 degree=2、18 个未知系数的候选空间内：
-  秩 16，解空间 2 维，其中已知不变量 2 维，gap=0。
-  适用范围：18 维候选空间，epsilon=0，系数次数 ≤ 2　证据：#4
-- Q 在 conformal2d（epsilon=1）下不守恒：
-  {Q,H} 在动量幂 [0, 3] 处非零。　证据：#9
-```
-
 ### 6.3 例二：Kerr 一阶分类
-
-```powershell
-python cli.py ask "Kerr 的 Carter 常数，在破坏 Vigeland-Yunes-Stein 式(54)配合关系的度量扰动下，还能不能延续为一阶守恒量？请分类：哪些扰动方向允许延续、哪些被排除。固定 M=1, a=1/2。"
-```
-
-模型自主设计了**正负对照**：先跑 `family="components"`（24 个破坏方向全排除，负对照），再跑 `family="eq54"`（4/4 允许，正对照），最后下结论。
-
-```
-| # | 工具                      | 诊断            | 判定 | 耗时   |
-| 3 | killing_search            | 解空间 3 维…    | none…| 6.3s   |
-| 4 | first_order_classification| 24 方向全排除   | none…| 21.5s  |
-| 5 | first_order_classification| 4/4 可延续      | class| 117.6s |
-```
-
-直接跑单步（不需要 LLM）：
-
-```powershell
-python cli.py tool first_order_classification '{\"background\":\"kerr\",\"q0\":\"Q_C\",\"family\":\"eq54+components\",\"parameters\":{\"M\":\"1\",\"a\":\"1/2\"}}'
-```
-
 ### 6.4 例三：符号 + 数值互证
-
-```powershell
-python cli.py ask "Kerr 背景 M=1, a=0.9：Carter 常数是否真的守恒？请同时用符号恒等式和数值轨道两种方式验证，并给出漂移量。"
-```
-
-模型的回答（节选）：
-
-> 符号验证：$\{Q_C,H\}\equiv 0$（精确有理数消去，残差为 0）。
-> 数值验证：沿一条真实测地线（$r_0=9$，$\theta=62°$）在 746 个采样点上相对漂移 $4.98\times10^{-9}$。
-> **漂移量与积分误差一致，而非真实不守恒**：同一轨道上 Hamiltonian 的弥散为 $5.90\times10^{-10}$，模拟器内置 Carter 常数的相对漂移为 $3.91\times10^{-9}$，同量级。
-> 综合判定：$Q_C$ 确实守恒。两条独立证据一致。
-
-它自己把漂移和能量误差做了量级对比——这一步不是提示词教的，是 `numeric_check` 返回的诊断里同时给了两个漂移量。
 
 ---
 
 ## 7. 参考
 
-- Vigeland, Yunes, Stein, *Bumpy Black Holes in Alternative Theories of Gravity* — 式 (54) 配合关系的来源（[`参考文献/`](../../参考文献/)）
+- Vigeland, Yunes, Stein, *Bumpy Black Holes in Alternative Theories of Gravity* — 式 (54) 配合关系的来源
 - Carter, *Global structure of the Kerr family of gravitational fields* — Carter 常数
 - Kruglikov & Matveev, *Normal forms for pseudo-Riemannian 2-dimensional metrics whose geodesic flows admit integrals quadratic in momenta* — 二维判据
 - Bateman et al., *Regular black hole metric with three constants of motion* — 高阶推广
